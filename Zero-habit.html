@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Zero</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f5f7;
+    --surface-2: #e5e5ea;
+    --text: #111111;
+    --text-secondary: #888888;
+    --border: #e5e5e5;
+    --accent: #007aff;
+    --zero: #f59e0b;
+    --negative: #10b981;
+    --danger: #ff3b30;
+    --streak: #ff9500;
+    --radius: 20px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="system"] {
+      --bg: #000000;
+      --surface: #1c1c1e;
+      --surface-2: #2c2c2e;
+      --text: #ffffff;
+      --text-secondary: #8e8e93;
+      --border: #38383a;
+      --shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --text: #ffffff;
+    --text-secondary: #8e8e93;
+    --border: #38383a;
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  :root[data-theme="light"] {
+    --bg: #ffffff;
+    --surface: #f5f5f7;
+    --surface-2: #e5e5ea;
+    --text: #111111;
+    --text-secondary: #888888;
+    --border: #e5e5e5;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overscroll-behavior-y: none; transition: background 0.3s, color 0.3s; }
+
+  #app { max-width: 580px; margin: 0 auto; padding: 16px; padding-bottom: 100px; }
+
+  /* Header */
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: sticky; top: 0; background: rgba(var(--bg), 0.92); backdrop-filter: blur(12px); z-index: 10; padding: 8px 0; transition: background 0.3s; }
+  h1 { font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.5px; }
+  .header-actions { display: flex; gap: 4px; align-items: center; }
+
+  /* Buttons */
+  .btn { border: none; background: var(--surface); color: var(--text); width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: transform 0.1s, background 0.2s; touch-action: manipulation; }
+  .btn:active { transform: scale(0.92); }
+  .btn-primary { background: var(--text); color: var(--bg); width: 56px; height: 56px; font-size: 28px; position: fixed; bottom: 24px; right: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 50; }
+  .btn-small { width: 32px; height: 32px; font-size: 14px; background: transparent; border: 1px solid var(--border); }
+  .btn-text { width: auto; padding: 0 10px; font-size: 12px; border-radius: 8px; font-weight: 500; }
+
+  /* Weekly Overview */
+  #weekly-overview { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 20px; }
+  .day-cell { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+  .day-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
+  .day-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+  .day-cell.today .day-label { color: var(--text); }
+  .day-cell.today .day-dot { box-shadow: 0 0 0 2px var(--text); }
+  .day-cell.completed .day-dot { background: var(--negative); transform: scale(1.3); }
+  .day-cell.incomplete .day-dot { background: var(--danger); opacity: 0.3; }
+
+  /* Habits Grid */
+  #habits-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 360px) {
+    #habits-list { gap: 8px; }
+    .habit-card { padding: 12px !important; }
+  }
+  .habit-card { background: var(--surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); position: relative; user-select: none; transition: transform 0.2s, box-shadow 0.2s, background 0.3s; display: flex; flex-direction: column; }
+  .habit-card.dragging { opacity: 0.5; transform: scale(0.98); }
+  .habit-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+  .habit-name { font-size: 14px; font-weight: 600; margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .habit-meta-row { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; min-height: 14px; }
+  .drag-handle { cursor: grab; color: var(--text-secondary); font-size: 16px; line-height: 1; padding: 2px; margin: -2px; margin-left: 4px; }
+  .drag-handle:active { cursor: grabbing; }
+
+  .streak-badge { position: absolute; top: 12px; right: 36px; font-size: 11px; font-weight: 700; color: var(--streak); display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity 0.3s; }
+  .streak-badge.visible { opacity: 1; }
+
+  .habit-body { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; justify-content: center; }
+  .habit-value { font-size: 40px; font-weight: 200; line-height: 1; cursor: pointer; transition: color 0.3s, transform 0.1s; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
+  .habit-value:active { transform: scale(0.92); }
+  .habit-value.positive { color: var(--text); }
+  .habit-value.zero { color: var(--zero); transform: scale(1.05); }
+  .habit-value.negative { color: var(--negative); font-weight: 600; }
+  .habit-value.timer-running { animation: pulse 1.5s ease-in-out infinite; }
+
+  .habit-check { width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--bg); cursor: pointer; transition: all 0.2s; margin: 4px 0; }
+  .habit-check.checked { background: var(--negative); border-color: var(--negative); }
+  .habit-check:active { transform: scale(0.9); }
+
+  .habit-controls { display: flex; gap: 8px; align-items: center; width: 100%; justify-content: center; }
+  .undo-btn { font-size: 11px; color: var(--text-secondary); padding: 5px 10px; border-radius: 8px; background: rgba(0,0,0,0.03); border: none; cursor: pointer; touch-action: manipulation; }
+  .undo-btn:active { background: rgba(0,0,0,0.08); }
+  .timer-btn { min-width: 64px; height: 32px; border-radius: 8px; border: none; background: var(--text); color: var(--bg); font-size: 13px; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+  .timer-btn.secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); font-weight: 500; }
+  .timer-btn:active { transform: scale(0.95); }
+
+  .focus-btn { position: absolute; top: 12px; right: 36px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 14px; }
+
+  /* Modal */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal.active { opacity: 1; pointer-events: auto; }
+  .modal-content { background: var(--bg); width: 100%; max-width: 580px; max-height: 90vh; border-radius: 24px 24px 0 0; padding: 24px; transform: translateY(20px); transition: transform 0.3s, background 0.3s; overflow-y: auto; }
+  .modal.active .modal-content { transform: translateY(0); }
+  .modal-title { font-size: 20px; font-weight: 700; margin: 0 0 20px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); text-transform: uppercase; }
+  .form-input, .form-select { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 16px; background: var(--bg); color: var(--text); -webkit-appearance: none; transition: border-color 0.2s, background 0.3s; }
+  .form-input:focus, .form-select:focus { outline: none; border-color: var(--text); }
+  .form-row { display: flex; gap: 12px; }
+  .form-row .form-group { flex: 1; }
+
+  .segmented { display: flex; background: var(--surface); border-radius: 10px; padding: 3px; gap: 3px; transition: background 0.3s; }
+  .segment { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); touch-action: manipulation; transition: all 0.2s; }
+  .segment.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; }
+  .checkbox-row input { width: 20px; height: 20px; accent-color: var(--text); }
+
+  .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+  .modal-actions button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .btn-save { background: var(--text); color: var(--bg); }
+  .btn-cancel { background: var(--surface); color: var(--text); transition: background 0.3s; }
+
+  /* Calendar Modal */
+  .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .cal-title { font-size: 16px; font-weight: 700; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-size: 13px; position: relative; }
+  .cal-day-header { font-size: 11px; font-weight: 700; color: var(--text-secondary); padding: 8px 0; text-transform: uppercase; }
+  .cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 500; cursor: pointer; transition: transform 0.1s; position: relative; background: var(--surface); }
+  .cal-cell:active { transform: scale(0.9); }
+  .cal-cell.today { box-shadow: 0 0 0 2px var(--text); }
+  .cal-cell.complete { background: rgba(16,185,129,0.15); color: var(--negative); }
+  .cal-cell.partial { background: rgba(245,158,11,0.15); color: var(--zero); }
+  .cal-cell.incomplete { background: rgba(255,59,48,0.08); color: var(--danger); opacity: 0.8; }
+  .cal-cell.empty { background: transparent; color: var(--text-secondary); opacity: 0.3; }
+  .cal-bars { position: absolute; bottom: 3px; left: 3px; right: 3px; display: flex; gap: 1px; height: 2px; justify-content: center; pointer-events: none; }
+  .cal-bar { flex: 1; max-width: 3px; border-radius: 1px; }
+  .cal-stats { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* Archive & Quick Modals */
+  .archive-item, .quick-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--surface); border-radius: 12px; margin-bottom: 8px; }
+  .archive-item span, .quick-item span { font-size: 15px; font-weight: 500; }
+  .archive-actions { display: flex; gap: 8px; }
+
+  /* Focus Mode */
+  #focus-modal .modal-content { max-height: 100vh; border-radius: 0; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg); }
+  .focus-name { font-size: 24px; font-weight: 600; margin-bottom: 24px; opacity: 0.6; }
+  .focus-time { font-size: 120px; font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -4px; margin-bottom: 40px; cursor: pointer; transition: color 0.3s; }
+  .focus-close { position: absolute; top: 24px; right: 24px; width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--surface); font-size: 20px; cursor: pointer; color: var(--text); }
+
+  /* Toast */
+  #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-60px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; z-index: 200; opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* Footer actions */
+  .footer-actions { position: fixed; bottom: 24px; left: 24px; display: flex; gap: 8px; z-index: 40; }
+  .hidden { display: none !important; }
+
+  /* Animations */
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop 0.2s ease; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* Scrollbar hide */
+  ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>Zero</h1>
+    <div class="header-actions">
+      <button class="btn btn-text" onclick="app.toggleTheme()" title="Theme">◐</button>
+      <button class="btn btn-text" onclick="app.openCalendar()">📅</button>
+      <button class="btn btn-text" onclick="app.openArchive()">🗑</button>
+      <button class="btn btn-text" onclick="app.exportData()">Export</button>
+      <button class="btn btn-text" onclick="app.importData()">Import</button>
+    </div>
+  </header>
+
+  <div id="weekly-overview"></div>
+  <div id="habits-list"></div>
+
+  <button class="btn btn-primary" id="add-btn" aria-label="Add habit">+</button>
+
+  <div class="footer-actions">
+    <input type="file" id="import-file" class="hidden" accept=".json" onchange="app.handleImport(this)">
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Add Habit Modal -->
+<div id="add-modal" class="modal" onclick="if(event.target===this)app.closeAddModal()">
+  <div class="modal-content">
+    <h2 class="modal-title">New Habit</h2>
+    <form onsubmit="event.preventDefault(); app.submitAdd();">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-input" id="input-name" placeholder="e.g. Read pages" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <div class="segmented">
+            <button type="button" class="segment active" data-type="daily" onclick="app.setType(this)">Daily</button>
+            <button type="button" class="segment" data-type="weekly" onclick="app.setType(this)">Weekly</button>
+            <button type="button" class="segment" data-type="onetime" onclick="app.setType(this)">One-time</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group hidden" id="deadline-group">
+        <label class="form-label">Deadline</label>
+        <input type="date" class="form-input" id="input-deadline">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Mode</label>
+          <div class="segmented">
+            <button type="button" class="segment active" data-mode="counter" onclick="app.setMode(this)">Counter</button>
+            <button type="button" class="segment" data-mode="timer" onclick="app.setMode(this)">Timer</button>
+            <button type="button" class="segment" data-mode="check" onclick="app.setMode(this)">Check</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" id="target-group">
+        <label class="form-label" id="target-label">Target</label>
+        <input type="number" class="form-input" id="input-target" value="20" min="1" required>
+      </div>
+
+      <label class="checkbox-row" id="allow-negative-row">
+        <input type="checkbox" id="input-allow-negative" checked>
+        <span>Allow overachievement</span>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="app.closeAddModal()">Cancel</button>
+        <button type="submit" class="btn-save">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Focus Modal -->
+<div id="focus-modal" class="modal" onclick="if(event.target===this)app.closeFocus()">
+  <div class="modal-content" style="position:relative">
+    <button class="focus-close" onclick="app.closeFocus()">×</button>
+    <div class="focus-name" id="focus-name"></div>
+    <div class="focus-time" id="focus-time" onclick="app.toggleFocusTimer()"></div>
+    <button class="timer-btn" id="focus-btn" onclick="app.toggleFocusTimer()">Pause</button>
+  </div>
+</div>
+
+<!-- Calendar Modal -->
+<div id="calendar-modal" class="modal" onclick="if(event.target===this)app.closeCalendar()">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2 class="modal-title" style="margin:0">History</h2>
+      <button class="btn btn-small" onclick="app.closeCalendar()">✕</button>
+    </div>
+    <div class="cal-header">
+      <button class="btn btn-small" onclick="app.changeMonth(-1)">‹</button>
+      <span class="cal-title" id="calendar-month-year"></span>
+      <button class="btn btn-small" onclick="app.changeMonth(1)">›</button>
+    </div>
+    <div id="calendar-grid" class="cal-grid"></div>
+    <div class="cal-stats" id="calendar-stats"></div>
+  </div>
+</div>
+
+<!-- Archive Modal -->
+<div id="archive-modal" class="modal" onclick="if(event.target===this)app.closeArchive()">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 class="modal-title" style="margin:0">Archived</h2>
+      <button class="btn btn-small" onclick="app.closeArchive()">✕</button>
+    </div>
+    <div id="archive-list"></div>
+  </div>
+</div>
+
+<!-- Quick Add Modal -->
+<div id="quick-modal" class="modal" onclick="if(event.target===this)app.closeQuickModal()">
+  <div class="modal-content">
+    <h2 class="modal-title">Quick Add</h2>
+    <div id="quick-list"></div>
+    <button class="btn-save" style="margin-top:16px;width:100%" onclick="app.openAddModal();app.closeQuickModal()">Create New</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'zero_habit_tracker_v3';
+
+const app = {
+  state: {
+    habits: [],
+    order: [],
+    lastResetDate: null,
+    lastResetWeek: null,
+    theme: 'system'
+  },
+  timerInterval: null,
+  focusHabitId: null,
+  addType: 'daily',
+  addMode: 'counter',
+  calendarDate: new Date(),
+  calendarView: 'overview',
+  calendarSelectedDay: null,
+
+  init() {
+    this.loadFromLocalStorage();
+    this.applyTheme(this.state.theme || 'system');
+    this.checkResets();
+    this.renderAll();
+    this.startTimerLoop();
+    this.setupVisibilityHandler();
+    this.setupPWASupport();
+    this.setupQuickAdd();
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closeAddModal();
+        this.closeFocus();
+        this.closeCalendar();
+        this.closeArchive();
+        this.closeQuickModal();
+      }
+    });
+  },
+
+  // ─── Utilities ───
+  $(sel) { return document.querySelector(sel); },
+  todayStr() { return new Date().toISOString().split('T')[0]; },
+  weekStr() {
+    const d = new Date();
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const week1 = new Date(d.getFullYear(), 0, 4);
+    const week = 1 + Math.ceil(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+  },
+  last7Days() {
+    const days = [];
+    const labels = ['S','M','T','W','T','F','S'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      days.push({ dateStr, label: labels[d.getDay()], isToday: i === 0 });
+    }
+    return days;
+  },
+  formatTime(sec) {
+    const abs = Math.abs(sec);
+    const m = Math.floor(abs / 60);
+    const s = abs % 60;
+    const sign = sec < 0 ? '−' : '';
+    return `${sign}${m}:${String(s).padStart(2,'0')}`;
+  },
+  formatDeadline(deadline) {
+    const d = new Date(deadline + 'T00:00:00');
+    const today = new Date(this.todayStr() + 'T00:00:00');
+    const diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return 'Overdue';
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  },
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  },
+  playSound(type = 'click') {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      if (type === 'complete') {
+        osc.frequency.setValueAtTime(523, ctx.currentTime);
+        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+      } else {
+        osc.frequency.value = 300;
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+      }
+    } catch(e) {}
+  },
+  vibrate(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  },
+  toast(msg) {
+    const t = this.$('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  },
+
+  // ─── Theme ───
+  toggleTheme() {
+    const modes = ['system', 'light', 'dark'];
+    const idx = modes.indexOf(this.state.theme || 'system');
+    const next = modes[(idx + 1) % modes.length];
+    this.state.theme = next;
+    this.applyTheme(next);
+    this.saveToLocalStorage();
+  },
+  applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = theme === 'dark' ? '#000000' : '#ffffff';
+  },
+
+  // ─── PWA ───
+  setupPWASupport() {
+    const iconSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%23111' width='192' height='192' rx='40'/%3E%3Ctext x='96' y='130' font-size='120' text-anchor='middle' fill='white' font-family='sans-serif'%3E0%3C/text%3E%3C/svg%3E`;
+    const manifest = {
+      name: "Zero",
+      short_name: "Zero",
+      start_url: window.location.href,
+      display: "standalone",
+      background_color: "#ffffff",
+      theme_color: "#111111",
+      icons: [{ src: iconSvg, sizes: "192x192", type: "image/svg+xml" }]
+    };
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:'application/json'}));
+    document.head.appendChild(link);
+
+    const appleLink = document.createElement('link');
+    appleLink.rel = 'apple-touch-icon';
+    appleLink.href = iconSvg;
+    document.head.appendChild(appleLink);
+
+    if ('serviceWorker' in navigator) {
+      const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(clients.claim()));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>new Response('Offline',{status:503}))));`;
+      const blob = new Blob([swCode], {type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blob));
+    }
+  },
+
+  // ─── Quick Add Long-Press ───
+  setupQuickAdd() {
+    const btn = this.$('#add-btn');
+    let timer;
+    const start = (e) => {
+      if (e.button && e.button !== 0) return;
+      timer = setTimeout(() => {
+        timer = null;
+        this.openQuickModal();
+        this.vibrate(20);
+      }, 500);
+    };
+    const end = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+    };
+    btn.addEventListener('touchstart', start, {passive:true});
+    btn.addEventListener('touchend', end);
+    btn.addEventListener('touchmove', end);
+    btn.addEventListener('mousedown', start);
+    btn.addEventListener('mouseup', end);
+    btn.addEventListener('mouseleave', end);
+    btn.addEventListener('click', (e) => {
+      if (!this.quickTriggered) this.openAddModal();
+      this.quickTriggered = false;
+    });
+  },
+
+  // ─── Storage ───
+  saveToLocalStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+  },
+  loadFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        this.state = { ...this.state, ...parsed };
+        const now = Date.now();
+        this.state.habits.forEach(h => {
+          if (h.mode === 'timer' && h.timerState === 'running' && h.lastTimerUpdate) {
+            const elapsed = Math.floor((now - h.lastTimerUpdate) / 1000);
+            if (elapsed > 0) {
+              h.current -= elapsed;
+              h.lastTimerUpdate = now;
+            }
+          }
+        });
+      }
+    } catch(e) { console.error('Load failed', e); }
+  },
+
+  // ─── Resets & Streaks ───
+  checkResets() {
+    const today = this.todayStr();
+    const week = this.weekStr();
+    let changed = false;
+
+    if (this.state.lastResetDate !== today) {
+      this.resetDailyHabits();
+      this.state.lastResetDate = today;
+      changed = true;
+    }
+    if (this.state.lastResetWeek !== week) {
+      this.resetWeeklyHabits();
+      this.state.lastResetWeek = week;
+      changed = true;
+    }
+    if (changed) this.saveToLocalStorage();
+  },
+  resetDailyHabits() {
+    this.state.habits.filter(h => h.type === 'daily' && !h.archived).forEach(h => {
+      if (h.current <= 0) h.streak = (h.streak || 0) + 1;
+      else h.streak = 0;
+      h.current = h.target;
+      this.updateHistory(h);
+    });
+  },
+  resetWeeklyHabits() {
+    this.state.habits.filter(h => h.type === 'weekly' && !h.archived).forEach(h => {
+      if (h.current <= 0) h.streak = (h.streak || 0) + 1;
+      else h.streak = 0;
+      h.current = h.target;
+      this.updateHistory(h);
+    });
+  },
+  getDisplayStreak(habit) {
+    if (habit.type === 'onetime') return 0;
+    let s = habit.streak || 0;
+    if (habit.current <= 0) s += 1;
+    return s;
+  },
+
+  // ─── History ───
+  updateHistory(habit) {
+    const today = this.todayStr();
+    habit.history[today] = habit.current <= 0;
+  },
+
+  // ─── CRUD ───
+  addHabit(name, type, mode, target, allowNegative, deadline) {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const isCheck = mode === 'check';
+    const isTimer = mode === 'timer';
+    const t = isCheck ? 1 : (parseFloat(target) || (isTimer ? 20 : 1));
+    const habit = {
+      id,
+      name: name.trim(),
+      type,
+      mode,
+      target: isTimer ? Math.round(t * 60) : Math.round(t),
+      current: isTimer ? Math.round(t * 60) : Math.round(t),
+      allowNegative: isCheck ? false : !!allowNegative,
+      deadline: (type === 'onetime' && deadline) ? deadline : null,
+      timerState: 'idle',
+      lastTimerUpdate: null,
+      history: {},
+      streak: 0,
+      archived: false,
+      createdAt: Date.now()
+    };
+    this.state.habits.push(habit);
+    this.state.order.push(id);
+    this.saveToLocalStorage();
+    this.renderAll();
+  },
+  archiveHabit(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h) return;
+    h.archived = true;
+    this.state.order = this.state.order.filter(oid => oid !== id);
+    this.saveToLocalStorage();
+    this.renderAll();
+    this.toast('Archived');
+    this.vibrate([10, 30]);
+  },
+  restoreHabit(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h) return;
+    h.archived = false;
+    this.state.order.push(id);
+    this.saveToLocalStorage();
+    this.renderAll();
+    this.closeArchive();
+  },
+  deleteForever(id) {
+    if (!confirm('Delete forever?')) return;
+    this.state.habits = this.state.habits.filter(h => h.id !== id);
+    this.state.order = this.state.order.filter(oid => oid !== id);
+    this.saveToLocalStorage();
+    this.renderArchiveList();
+    this.renderAll();
+  },
+
+  // ─── Counter ───
+  updateCounter(id, delta) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h || h.mode !== 'counter') return;
+
+    const prev = h.current;
+    h.current += delta;
+
+    if (!h.allowNegative && h.current > h.target) h.current = h.target;
+    if (!h.allowNegative && h.current < 0) h.current = 0;
+
+    const crossedZero = prev > 0 && h.current <= 0;
+    this.updateHistory(h);
+    this.saveToLocalStorage();
+    this.renderHabit(h);
+
+    if (delta < 0) {
+      if (crossedZero) {
+        this.vibrate([10, 50, 10]);
+        this.playSound('complete');
+      } else {
+        this.vibrate(10);
+        this.playSound('click');
+      }
+    }
+
+    const el = this.$(`[data-id="${id}"] .habit-value`);
+    if (el) {
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+    }
+  },
+
+  // ─── Check ───
+  toggleCheck(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h || h.mode !== 'check') return;
+    const wasDone = h.current <= 0;
+    if (!wasDone) {
+      h.current = 0;
+      this.playSound('complete');
+      this.vibrate([10, 50, 10]);
+    } else {
+      h.current = 1;
+      this.vibrate(10);
+    }
+    this.updateHistory(h);
+    this.saveToLocalStorage();
+    this.renderHabit(h);
+  },
+
+  // ─── Timer ───
+  startTimer(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h || h.mode !== 'timer') return;
+    h.timerState = 'running';
+    h.lastTimerUpdate = Date.now();
+    this.saveToLocalStorage();
+    this.renderHabit(h);
+  },
+  pauseTimer(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h || h.mode !== 'timer') return;
+    if (h.timerState === 'running') {
+      const elapsed = Math.floor((Date.now() - h.lastTimerUpdate) / 1000);
+      h.current -= elapsed;
+    }
+    h.timerState = 'paused';
+    h.lastTimerUpdate = null;
+    this.saveToLocalStorage();
+    this.renderHabit(h);
+  },
+  resetTimer(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h || h.mode !== 'timer') return;
+    h.timerState = 'idle';
+    h.current = h.target;
+    h.lastTimerUpdate = null;
+    this.updateHistory(h);
+    this.saveToLocalStorage();
+    this.renderHabit(h);
+  },
+  toggleTimer(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h) return;
+    if (h.timerState === 'running') this.pauseTimer(id);
+    else this.startTimer(id);
+  },
+
+  // ─── Timer Loop ───
+  startTimerLoop() {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.timerInterval = setInterval(() => {
+      const now = Date.now();
+      let changed = false;
+      this.state.habits.forEach(h => {
+        if (h.mode === 'timer' && h.timerState === 'running') {
+          const elapsed = Math.floor((now - h.lastTimerUpdate) / 1000);
+          if (elapsed > 0) {
+            const prev = h.current;
+            h.current -= elapsed;
+            h.lastTimerUpdate = now;
+            this.updateHistory(h);
+            changed = true;
+            if (prev > 0 && h.current <= 0) this.playSound('complete');
+          }
+        }
+      });
+      if (changed) {
+        this.saveToLocalStorage();
+        this.state.habits.forEach(h => this.renderHabit(h));
+        this.updateFocus();
+      }
+    }, 1000);
+  },
+  setupVisibilityHandler() {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        const now = Date.now();
+        this.state.habits.forEach(h => {
+          if (h.mode === 'timer' && h.timerState === 'running' && h.lastTimerUpdate) {
+            const elapsed = Math.floor((now - h.lastTimerUpdate) / 1000);
+            if (elapsed > 0) {
+              h.current -= elapsed;
+              h.lastTimerUpdate = now;
+            }
+          }
+        });
+        this.saveToLocalStorage();
+        this.renderAll();
+        this.updateFocus();
+      }
+    });
+  },
+
+  // ─── Rendering ───
+  renderAll() {
+    this.renderOverview();
+    this.renderHabits();
+  },
+  renderOverview() {
+    const days = this.last7Days();
+    const dailyHabits = this.state.habits.filter(h => h.type === 'daily' && !h.archived);
+    const html = days.map(d => {
+      let status = 'neutral';
+      if (dailyHabits.length > 0) {
+        const allDone = dailyHabits.every(h => h.history[d.dateStr] === true || (d.isToday && h.current <= 0));
+        const anyDone = dailyHabits.some(h => h.history[d.dateStr] !== undefined || d.isToday);
+        if (allDone) status = 'completed';
+        else if (anyDone) status = 'incomplete';
+      }
+      return `<div class="day-cell ${status} ${d.isToday ? 'today' : ''}" onclick="app.jumpToCalendar('${d.dateStr}')">
+        <span class="day-label">${d.label}</span>
+        <span class="day-dot"></span>
+      </div>`;
+    }).join('');
+    this.$('#weekly-overview').innerHTML = html;
+  },
+  renderHabits() {
+    const list = this.$('#habits-list');
+    const active = this.state.habits.filter(h => !h.archived);
+    const ordered = this.state.order.map(id => active.find(h => h.id === id)).filter(Boolean);
+    // Append any active habits not in order at the end
+    active.forEach(h => { if (!ordered.find(o => o.id === h.id)) ordered.push(h); });
+    list.innerHTML = '';
+    ordered.forEach(h => list.appendChild(this.createHabitEl(h)));
+  },
+  renderHabit(h) {
+    const existing = this.$(`.habit-card[data-id="${h.id}"]`);
+    if (existing) {
+      const newEl = this.createHabitEl(h);
+      existing.replaceWith(newEl);
+    }
+  },
+
+  createHabitEl(h) {
+    const el = document.createElement('div');
+    el.className = 'habit-card';
+    el.dataset.id = h.id;
+    el.draggable = true;
+
+    const streak = this.getDisplayStreak(h);
+    const streakHtml = streak > 1 ? `<div class="streak-badge visible"><span>🔥</span><span>${streak}</span></div>` : '<div class="streak-badge"></div>';
+
+    let deadlineText = '';
+    if (h.type === 'onetime' && h.deadline) {
+      const color = new Date(h.deadline + 'T00:00:00') < new Date(this.todayStr() + 'T00:00:00') ? 'color:var(--danger)' : '';
+      deadlineText = ` · <span style="${color}">${this.formatDeadline(h.deadline)}</span>`;
+    }
+
+    let mainContent = '';
+    if (h.mode === 'check') {
+      const checked = h.current <= 0;
+      mainContent = `<div class="habit-check ${checked ? 'checked' : ''}" onclick="app.handleValueClick('${h.id}')">${checked ? '✓' : ''}</div>`;
+    } else if (h.mode === 'counter') {
+      const colorClass = h.current < 0 ? 'negative' : (h.current === 0 ? 'zero' : 'positive');
+      mainContent = `<div class="habit-value ${colorClass}" onclick="app.handleValueClick('${h.id}')">${h.current}</div>`;
+    } else if (h.mode === 'timer') {
+      const colorClass = h.current < 0 ? 'negative' : (h.current === 0 ? 'zero' : 'positive');
+      const runningClass = h.timerState === 'running' ? 'timer-running' : '';
+      mainContent = `<div class="habit-value ${colorClass} ${runningClass}" onclick="app.handleValueClick('${h.id}')">${this.formatTime(h.current)}</div>`;
+    }
+
+    let controls = '';
+    if (h.mode === 'counter') {
+      controls = `<button class="undo-btn" onclick="event.stopPropagation(); app.updateCounter('${h.id}', 1)">Undo +1</button>`;
+    } else if (h.mode === 'check') {
+      controls = `<button class="undo-btn" onclick="event.stopPropagation(); app.toggleCheck('${h.id}')">${h.current <= 0 ? 'Uncheck' : 'Check'}</button>`;
+    } else if (h.mode === 'timer') {
+      controls = `<button class="timer-btn secondary" onclick="event.stopPropagation(); app.resetTimer('${h.id}')">Reset</button>`;
+    }
+
+    const focusBtn = h.mode === 'timer' ? `<button class="focus-btn" onclick="event.stopPropagation(); app.openFocus('${h.id}')" title="Focus">◉</button>` : '';
+
+    el.innerHTML = `
+      <div class="habit-header">
+        <h3 class="habit-name">${this.escapeHtml(h.name)}</h3>
+        ${focusBtn}
+        <div class="drag-handle" title="Drag to reorder">≡</div>
+      </div>
+      ${streakHtml}
+      <div class="habit-meta-row">${h.type}${deadlineText}</div>
+      <div class="habit-body">
+        ${mainContent}
+        <div class="habit-controls">
+          ${controls}
+        </div>
+      </div>
+    `;
+
+    // Drag & Drop
+    el.addEventListener('dragstart', e => {
+      el.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', h.id);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId || draggedId === h.id) return;
+      const from = this.state.order.indexOf(draggedId);
+      const to = this.state.order.indexOf(h.id);
+      if (from > -1 && to > -1) {
+        this.state.order.splice(from, 1);
+        this.state.order.splice(to, 0, draggedId);
+        this.saveToLocalStorage();
+        this.renderHabits();
+      }
+    });
+
+    // Long-press archive
+    let pressTimer;
+    const startPress = () => {
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        this.archiveHabit(h.id);
+      }, 700);
+    };
+    const endPress = () => { if (pressTimer) clearTimeout(pressTimer); };
+    el.addEventListener('touchstart', startPress, {passive:true});
+    el.addEventListener('touchend', endPress);
+    el.addEventListener('touchmove', endPress);
+    el.addEventListener('mousedown', startPress);
+    el.addEventListener('mouseup', endPress);
+    el.addEventListener('mouseleave', endPress);
+
+    return el;
+  },
+
+  handleValueClick(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h) return;
+    if (h.mode === 'counter') this.updateCounter(id, -1);
+    else if (h.mode === 'check') this.toggleCheck(id);
+    else if (h.mode === 'timer') this.toggleTimer(id);
+  },
+
+  // ─── Focus Mode ───
+  openFocus(id) {
+    const h = this.state.habits.find(x => x.id === id);
+    if (!h || h.mode !== 'timer') return;
+    this.focusHabitId = id;
+    this.$('#focus-modal').classList.add('active');
+    this.updateFocus();
+  },
+  closeFocus() {
+    this.focusHabitId = null;
+    this.$('#focus-modal').classList.remove('active');
+  },
+  updateFocus() {
+    if (!this.focusHabitId) return;
+    const h = this.state.habits.find(x => x.id === this.focusHabitId);
+    if (!h) { this.closeFocus(); return; }
+    this.$('#focus-name').textContent = h.name;
+    const timeEl = this.$('#focus-time');
+    timeEl.textContent = this.formatTime(h.current);
+    timeEl.className = 'focus-time ' + (h.current < 0 ? 'negative' : h.current === 0 ? 'zero' : 'positive');
+    this.$('#focus-btn').textContent = h.timerState === 'running' ? 'Pause' : (h.timerState === 'paused' ? 'Resume' : 'Start');
+  },
+  toggleFocusTimer() {
+    if (!this.focusHabitId) return;
+    this.toggleTimer(this.focusHabitId);
+    this.updateFocus();
+  },
+
+  // ─── Calendar ───
+  openCalendar() {
+    this.calendarView = 'overview';
+    this.calendarSelectedDay = null;
+    this.$('#calendar-modal').classList.add('active');
+    this.renderCalendar();
+  },
+  closeCalendar() { this.$('#calendar-modal').classList.remove('active'); },
+  jumpToCalendar(dateStr) {
+    this.calendarDate = new Date(dateStr + 'T00:00:00');
+    this.openCalendar();
+  },
+  changeMonth(delta) {
+    this.calendarDate.setMonth(this.calendarDate.getMonth() + delta);
+    this.renderCalendar();
+  },
+  renderCalendar() {
+    const year = this.calendarDate.getFullYear();
+    const month = this.calendarDate.getMonth();
+    this.$('#calendar-month-year').textContent = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const grid = this.$('#calendar-grid');
+    grid.innerHTML = '';
+
+    const dayNames = ['S','M','T','W','T','F','S'];
+    dayNames.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-day-header';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+
+    const today = this.todayStr();
+    const active = this.state.habits.filter(h => !h.archived && h.type !== 'onetime');
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      cell.textContent = d;
+
+      if (dateStr === today) cell.classList.add('today');
+
+      const status = this.getDayStatus(dateStr);
+      if (status) cell.classList.add(status);
+      else cell.classList.add('empty');
+
+      // Heatmap bars
+      if (active.length > 0 && dateStr <= today) {
+        const bars = document.createElement('div');
+        bars.className = 'cal-bars';
+        active.forEach(h => {
+          const bar = document.createElement('div');
+          bar.className = 'cal-bar';
+          const isDone = h.history[dateStr] === true || (dateStr === today && h.current <= 0);
+          const wasActive = h.history[dateStr] !== undefined || dateStr === today || new Date(dateStr) >= new Date(new Date(h.createdAt).toISOString().split('T')[0]);
+          if (isDone) bar.style.background = 'var(--negative)';
+          else if (wasActive) bar.style.background = 'var(--danger)';
+          else bar.style.background = 'var(--border)';
+          bars.appendChild(bar);
+        });
+        cell.appendChild(bars);
+      }
+
+      cell.onclick = () => this.showDayDetail(dateStr);
+      grid.appendChild(cell);
+    }
+
+    this.renderCalendarStats();
+  },
+  getDayStatus(dateStr) {
+    const today = this.todayStr();
+    if (dateStr > today) return null;
+    const active = this.state.habits.filter(h => !h.archived && h.type !== 'onetime');
+    if (active.length === 0) return null;
+    let done = 0;
+    active.forEach(h => {
+      if (dateStr === today) { if (h.current <= 0) done++; }
+      else { if (h.history[dateStr] === true) done++; }
+    });
+    if (done === 0) return 'incomplete';
+    if (done === active.length) return 'complete';
+    return 'partial';
+  },
+  getStreaks() {
+    let current = 0, longest = 0, streak = 0;
+    for (let i = 0; i < 730; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split('T')[0];
+      const status = this.getDayStatus(ds);
+      if (status === 'complete') {
+        streak++;
+        if (i === 0) current = streak;
+      } else if (status === 'incomplete' || status === 'partial') {
+        longest = Math.max(longest, streak);
+        streak = 0;
+      }
+    }
+    longest = Math.max(longest, streak);
+    return { current, longest };
+  },
+  showDayDetail(dateStr) {
+    this.calendarView = 'day';
+    this.calendarSelectedDay = dateStr;
+    this.renderCalendarStats();
+  },
+  renderCalendarStats() {
+    const container = this.$('#calendar-stats');
+    if (this.calendarView === 'day') {
+      const ds = this.calendarSelectedDay;
+      const active = this.state.habits.filter(h => !h.archived && h.type !== 'onetime');
+      let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700;font-size:16px">${new Date(ds+'T00:00:00').toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'})}</div>
+        <button class="undo-btn" onclick="app.backToCalendarOverview()">← Back</button>
+      </div>`;
+      if (active.length === 0) {
+        html += '<div style="color:var(--text-secondary);font-size:14px">No habits tracked yet.</div>';
+      } else {
+        html += '<div style="display:flex;flex-direction:column;gap:10px">';
+        active.forEach(h => {
+          const isDone = ds === this.todayStr() ? h.current <= 0 : h.history[ds] === true;
+          const color = isDone ? 'var(--negative)' : 'var(--text-secondary)';
+          const icon = isDone ? '✓' : '○';
+          html += `<div style="display:flex;align-items:center;gap:10px;font-size:15px">
+            <span style="color:${color};font-weight:700;width:20px;text-align:center">${icon}</span>
+            <span>${this.escapeHtml(h.name)}</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text-secondary);text-transform:uppercase">${h.mode}</span>
+          </div>`;
+        });
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    } else {
+      const { current, longest } = this.getStreaks();
+      const year = this.calendarDate.getFullYear();
+      const month = this.calendarDate.getMonth();
+      let perfect = 0, total = 0;
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      for (let d=1; d<=daysInMonth; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if (dateStr > this.todayStr()) continue;
+        const status = this.getDayStatus(dateStr);
+        if (status) total++;
+        if (status === 'complete') perfect++;
+      }
+      const rate = total > 0 ? Math.round((perfect/total)*100) : 0;
+      container.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center">
+          <div><div style="font-size:24px;font-weight:700">${perfect}</div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase">Perfect Days</div></div>
+          <div><div style="font-size:24px;font-weight:700">${rate}%</div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase">Success Rate</div></div>
+          <div><div style="font-size:24px;font-weight:700">${current}</div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase">Current Streak</div></div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);text-align:center">Tap a day to see details · Bars = habits</div>
+      `;
+    }
+  },
+  backToCalendarOverview() {
+    this.calendarView = 'overview';
+    this.calendarSelectedDay = null;
+    this.renderCalendarStats();
+  },
+
+  // ─── Archive ───
+  openArchive() {
+    this.$('#archive-modal').classList.add('active');
+    this.renderArchiveList();
+  },
+  closeArchive() { this.$('#archive-modal').classList.remove('active'); },
+  renderArchiveList() {
+    const list = this.$('#archive-list');
+    const archived = this.state.habits.filter(h => h.archived);
+    if (archived.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:20px">No archived habits</div>';
+      return;
+    }
+    list.innerHTML = archived.map(h => `
+      <div class="archive-item">
+        <span>${this.escapeHtml(h.name)}</span>
+        <div class="archive-actions">
+          <button class="undo-btn" onclick="app.restoreHabit('${h.id}')">Restore</button>
+          <button class="undo-btn" style="color:var(--danger)" onclick="app.deleteForever('${h.id}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  // ─── Quick Add ───
+  openQuickModal() {
+    this.quickTriggered = true;
+    const list = this.$('#quick-list');
+    const archived = this.state.habits.filter(h => h.archived).slice(-3);
+    if (archived.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-secondary);text-align:center;padding:12px">No recent habits. Create a new one!</div>';
+    } else {
+      list.innerHTML = archived.map(h => `
+        <div class="quick-item" onclick="app.restoreHabit('${h.id}');app.closeQuickModal()">
+          <span>${this.escapeHtml(h.name)}</span>
+          <span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase">${h.type} · ${h.mode}</span>
+        </div>
+      `).join('');
+    }
+    this.$('#quick-modal').classList.add('active');
+  },
+  closeQuickModal() { this.$('#quick-modal').classList.remove('active'); },
+
+  // ─── Modal Handlers ───
+  openAddModal() {
+    this.$('#add-modal').classList.add('active');
+    this.$('#input-name').focus();
+  },
+  closeAddModal() { this.$('#add-modal').classList.remove('active'); },
+  setType(btn) {
+    this.addType = btn.dataset.type;
+    btn.parentElement.querySelectorAll('.segment').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const dg = this.$('#deadline-group');
+    if (this.addType === 'onetime') dg.classList.remove('hidden');
+    else dg.classList.add('hidden');
+  },
+  setMode(btn) {
+    this.addMode = btn.dataset.mode;
+    btn.parentElement.querySelectorAll('.segment').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tg = this.$('#target-group');
+    const ng = this.$('#allow-negative-row');
+    if (this.addMode === 'check') {
+      tg.classList.add('hidden');
+      ng.classList.add('hidden');
+    } else {
+      tg.classList.remove('hidden');
+      ng.classList.remove('hidden');
+      this.$('#target-label').textContent = this.addMode === 'timer' ? 'Minutes' : 'Target';
+    }
+  },
+  submitAdd() {
+    const name = this.$('#input-name').value;
+    const target = this.addMode === 'check' ? 1 : this.$('#input-target').value;
+    const allowNeg = this.addMode === 'check' ? false : this.$('#input-allow-negative').checked;
+    const deadline = this.addType === 'onetime' ? this.$('#input-deadline').value : null;
+    if (!name) return;
+    this.addHabit(name, this.addType, this.addMode, target, allowNeg, deadline);
+    this.$('#input-name').value = '';
+    this.$('#input-target').value = this.addMode === 'timer' ? '20' : '20';
+    this.$('#input-deadline').value = '';
+    this.closeAddModal();
+  },
+
+  // ─── Import / Export ───
+  exportData() {
+    const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zero-backup-${this.todayStr()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+  importData() { this.$('#import-file').click(); },
+  handleImport(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.habits && Array.isArray(data.habits)) {
+          this.state = data;
+          this.applyTheme(this.state.theme || 'system');
+          this.saveToLocalStorage();
+          this.checkResets();
+          this.renderAll();
+          this.playSound('complete');
+          this.toast('Imported successfully');
+        } else {
+          alert('Invalid backup file');
+        }
+      } catch(err) { alert('Failed to import'); }
+      input.value = '';
+    };
+    reader.readAsText(file);
+  }
+};
+
+app.init();
+</script>
+</body>
+</html>
